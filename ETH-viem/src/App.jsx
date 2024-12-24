@@ -1,35 +1,55 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { http, createConfig, WagmiProvider, useConnect } from 'wagmi'
+import { mainnet, base } from 'wagmi/chains'
+import { injected, walletConnect, metaMask, safe } from 'wagmi/connectors'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+
+
+const queryClient = new QueryClient()
+
+export const config = createConfig({
+  chains: [mainnet, base],
+  connectors: [
+    injected(),
+    metaMask(),
+    safe(),
+  ],
+  transports: {
+    [mainnet.id]: http(),
+  },
+})
 
 function App() {
-  const [count, setCount] = useState(0)
+  
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <WalletConnector />
+        <EthSend />
+      </QueryClientProvider>
+    </WagmiProvider>
   )
+}
+
+function WalletConnector() {
+  const { connectors, connect } = useConnect()
+
+  //connectors is an array of all the connectors that are available to connect to the app
+  //[{name: "MetaMask", uid: "metamask"}, {name: "Coinbase", uid: "coinbase"}]
+  return connectors.map((connector) => (
+    <button key={connector.uid} onClick={() => connect({ connector })}>
+      {connector.name}
+    </button>
+  ))
+}
+
+function EthSend() {
+  return <div>
+    <input type="text" placeholder="Address"></input>
+    <button>Send 0.1 ETH</button> 
+  </div>
+
 }
 
 export default App
